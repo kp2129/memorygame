@@ -5,8 +5,21 @@
 @tailwind components;
 @tailwind utilities;
 
+.main-content {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
 
-.cell{
+main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.cell {
     height: 5rem;
     width: 5rem;
     background-color: red;
@@ -14,21 +27,19 @@
     filter: brightness(0.5);
 }
 
-.cell:hover:not(.correct){
+.cell:hover:not(.correct) {
     filter: brightness(1);
 }
 
-.highlight{
+.highlight {
     filter: brightness(1);
 
 }
 
-/* Add perspective for 3D effect */
 .grid-background {
     perspective: 1000px;
 }
 
-/* Add styles for flipped state */
 .cell {
     height: 5rem;
     width: 5rem;
@@ -39,7 +50,7 @@
     transition: transform 0.5s ease;
 }
 
-.correct{
+.correct {
     filter: blur(5px);
 }
 
@@ -50,21 +61,49 @@
     justify-content: center;
 }
 
-.cell.flipped > span {
+.cell.flipped>span {
     font-size: 3.5em;
-    color: gold;
 }
 
-.game{
+.game {
     display: flex;
     justify-content: center;
 }
 
-.game-indicator{
+.game-indicator {
     width: 100%;
     display: flex;
     justify-content: space-between;
-    font-family: 'AmazDooMLeft2', sans-serif; 
+    font-family: 'AmazDooMLeft2', sans-serif;
+    font-size: 2em;
+
+}
+
+.level-complete-popup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0px 25px 20px -20px rgba(0, 0, 0, 0.45);
+    padding: 2em;
+    border-radius: 2em;
+
+}
+
+.level-options{
+    display: flex;
+    gap: 1em;
+}
+
+.level-complete-popup>h3 {
+    justify-content: space-between;
+    font-family: 'AmazDooMLeft2', sans-serif;
+    font-size: 3em;
+}
+
+.game-over>h3,
+p {
+    justify-content: space-between;
+    font-family: 'AmazDooMLeft2', sans-serif;
     font-size: 2em;
 
 }
@@ -76,7 +115,7 @@
 }
 
 
-.grid-container{
+.grid-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -84,7 +123,7 @@
     padding-top: 5rem;
 }
 
-.grid-background{
+.grid-background {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -95,7 +134,37 @@
     border-radius: 1em;
 }
 
-.row{
+.row {
     display: flex;
     gap: 1rem;
+}
+
+.start-button {
+    background-color: #FF0000;
+    color: white;
+    font-weight: bold;
+    padding: 0.4em 2em 0.4em 2em;
+    border-radius: 1em;
+}
+
+.start-screen {
+    padding: 2rem;
+    box-shadow: 0px 25px 20px -20px rgba(0, 0, 0, 0.45);
+    border-radius: 2rem;
+
+}
+
+.button-give-up {
+    color: red;
+}
+
+.button-give-up:hover {
+    color: black;
+}
+
+.start-sreen-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
 }
