@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
 import useSound from 'use-sound';
 import flipped from '../../../audio/flipped.wav';
 import chessTheme from '@/themes/chessTheme';
 import StartScreen from '../../Components/StartScreen';
 import GameOverScreen from '../../Components/GameOverScreen';
 import WinnerScreen from '../../Components/WinnerScreen';
-import LevelCompletePopup from '../../Components/LevelCompletePopup'; // Import the new component
+import LevelCompletePopup from '../../Components/LevelCompletePopup';
 
 function MemoryGame({ auth }) {
     const { rows, cols, icons, colors } = chessTheme;
-    const pairOrderDisplayDuration = 2000;
     const maxLevel = 20;
-    const gameTimeInSeconds = 180;
 
     const [level, setLevel] = useState(1);
     const [gameStarted, setGameStarted] = useState(false);
@@ -23,13 +21,22 @@ function MemoryGame({ auth }) {
     const [isLocked, setIsLocked] = useState(false);
     const [pieces, setPieces] = useState([]);
     const [startTime, setStartTime] = useState(null);
-    const [currentTime, setCurrentTime] = useState(gameTimeInSeconds * 1000);
+    const [currentTime, setCurrentTime] = useState(180 * 1000);
     const [isGameCompleted, setIsGameCompleted] = useState(false);
     const [correctCells, setCorrectCells] = useState([]);
     const [points, setPoints] = useState(0);
     const [streak, setStreak] = useState(0);
     const [pairOrderVisible, setPairOrderVisible] = useState(true);
     const [levelFinished, setLevelFinished] = useState(false);
+    const [completedDueToGiveUp, setCompletedDueToGiveUp] = useState(false);
+    
+    
+    const { data, setData, post, processing, errors, reset } = useForm({
+        points: '',
+        time: '',
+        level: '',
+    });
+
     const [playFlippedSound] = useSound(flipped);
 
     useEffect(() => {
@@ -37,7 +44,7 @@ function MemoryGame({ auth }) {
     }, []);
 
     useEffect(() => {
-        if (pairOrderVisible && startTime === null) {
+        if (pairOrderVisible && startTime === null  && gameStarted) {
             const timeoutId = setTimeout(() => {
                 setPairOrderVisible(false);
                 setStartTime(Date.now());
@@ -45,10 +52,12 @@ function MemoryGame({ auth }) {
                 setTimeout(() => {
                     setFlippedCells(Array(rows * cols).fill(false));
                 }, 2000 - (level * 5));
-            }, pairOrderDisplayDuration);
+            }, 1200);
             return () => clearTimeout(timeoutId);
         }
-    }, [pairOrderVisible, startTime, rows, cols, pairOrderDisplayDuration, level]);
+    }, [pairOrderVisible, startTime, rows, cols, level]);
+
+    console.log(180-(currentTime/1000))
 
     useEffect(() => {
         if (startTime !== null && !isGameCompleted) {
@@ -67,9 +76,23 @@ function MemoryGame({ auth }) {
     }, [startTime, currentTime]);
 
     useEffect(() => {
+        setData({
+            points: points,
+            level: level,
+            time: 180-(currentTime/1000),
+        });
+        
+        if (isGameCompleted || levelFinished) {
+            // console.log(data)
+            post(route('postScore'), {
+                data
+            });
+        }
+    }, [isGameCompleted, levelFinished]);
+
+    useEffect(() => {
         const allFlipped = correctCells.length === rows * cols;
         if (allFlipped) {
-            setIsGameCompleted(true);
             setLevelFinished(true);
         } else if (selectedCells.length === 2) {
             const timeoutId = setTimeout(() => {
@@ -200,12 +223,35 @@ function MemoryGame({ auth }) {
     };
 
     const handleRetry = () => {
-        // Reset state for retry
+        setLevel(1);
+        setFlippedCells(Array(rows * cols).fill(false));
+        setSelectedCells([]);
+        setCorrectCells([]); 
+        setIsGameCompleted(false); 
+        setStartTime(null); 
+        setCurrentTime(180 * 1000);
+        setPoints(0); 
+        setStreak(0);
+        setPairOrderVisible(true);
+        setLevelFinished(false);
+        setCompletedDueToGiveUp(false); 
+        generateRandomPieces(); 
+        setData({
+            points: points,
+            level: level,
+            time: 180-(currentTime/1000),
+        });
     };
 
     const handleGiveUp = () => {
         setIsGameCompleted(true);
         setLevelFinished(true);
+        setCompletedDueToGiveUp(true);
+        setData({
+            points: points,
+            level: level,
+            time: 180-(currentTime/1000),
+        });
     };
 
     const handleNextLevel = () => {
@@ -215,7 +261,7 @@ function MemoryGame({ auth }) {
         setCorrectCells([]);
         setIsGameCompleted(false);
         setStartTime(null);
-        setCurrentTime(gameTimeInSeconds * 1000);
+        setCurrentTime(180 * 1000);
         setPoints(prevPoints => prevPoints + (level * 10));
         setStreak(0);
         setPairOrderVisible(true);
@@ -235,11 +281,6 @@ function MemoryGame({ auth }) {
                             <div>
                                 Points: {points}
                             </div>
-                            {isGameCompleted && (
-                                <div>
-                                    Game completed!
-                                </div>
-                            )}
                             <div>
                                 Time: {formattedTime}
                             </div>
@@ -251,15 +292,15 @@ function MemoryGame({ auth }) {
             ) : (
                 !isGameCompleted && !levelFinished && <StartScreen onStart={handleStartGame} />
             )}
-
-            {levelFinished && !isGameCompleted && (
+            
+            {levelFinished && level < maxLevel && !completedDueToGiveUp && (
                 <LevelCompletePopup onNextLevel={handleNextLevel} onGiveUp={handleGiveUp} />
             )}
 
-            {isGameCompleted && level === maxLevel ? (
+            {isGameCompleted && level === maxLevel && !completedDueToGiveUp ? (
                 <WinnerScreen />
             ) : (
-                isGameCompleted && !levelFinished && <GameOverScreen level={level} points={points} onRetry={handleRetry} />
+                isGameCompleted && <GameOverScreen level={level} points={points} onRetry={handleRetry} />
             )}
         </AuthenticatedLayout>
     );

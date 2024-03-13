@@ -42,7 +42,12 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/memoryGame', [MemoryGameController::class, 'get'])->name('game');
+    Route::get('/memoryGame', [MemoryGameController::class, 'getView'])->name('game');
+    Route::post('/memoryGame', [MemoryGameController::class, 'postScore'])->name('postScore');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/history', [MemoryGameController::class, 'getHistory'])->name('history');
 });
 
 require __DIR__.'/auth.php';

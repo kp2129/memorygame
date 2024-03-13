@@ -17,7 +17,10 @@ class CreateHistoryTable extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->bigInteger('level');
-            $table->bigInteger('score');
+            $table->bigInteger('points');
+            $table->bigInteger('time');
+            $table->boolean('lost');
+            $table->boolean('gaveUp');
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
