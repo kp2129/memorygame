@@ -15,6 +15,8 @@ class History extends Model
         'user_id',
         'level',
         'points',
-        'time'
+        'time',
+        'lost',
+        'gaveUp'
     ];
 }

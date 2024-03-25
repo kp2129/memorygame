@@ -30,7 +30,7 @@ export default function Authenticated({ user, header, children }) {
                                 <NavLink href={route('history')} active={route().current('history')}>
                                     History
                                 </NavLink>
-                                <NavLink href={route('dashboard')} active={route().current('leaderboard')}>
+                                <NavLink href={route('leaderboard')} active={route().current('leaderboard')}>
                                     Leaderboard
                                 </NavLink>
                             </div>
@@ -103,6 +103,15 @@ export default function Authenticated({ user, header, children }) {
                     <div className="pt-2 pb-3 space-y-1">
                         <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
                             Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('game')} active={route().current('game')}>
+                            Game
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('history')} active={route().current('history')}>
+                            History
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('leaderboard')} active={route().current('leaderboard')}>
+                            Leaderboard
                         </ResponsiveNavLink>
                     </div>
 

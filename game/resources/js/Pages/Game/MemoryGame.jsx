@@ -9,14 +9,17 @@ import StartScreen from '../../Components/StartScreen';
 import GameOverScreen from '../../Components/GameOverScreen';
 import WinnerScreen from '../../Components/WinnerScreen';
 import LevelCompletePopup from '../../Components/LevelCompletePopup';
+import Confetti from 'react-confetti';
 
-function MemoryGame({ auth }) {
-    const { rows, cols, icons, colors } = chessTheme;
+function MemoryGame({ auth, bestScore }) {
+    const { icons, colors } = chessTheme;
     const maxLevel = 20;
+    const maxRows = 4;
+    const maxCols = 6;
 
-    const [level, setLevel] = useState(1);
+    const [level, setLevel] = useState(13);
     const [gameStarted, setGameStarted] = useState(false);
-    const [flippedCells, setFlippedCells] = useState(Array(rows * cols).fill(false));
+    const [flippedCells, setFlippedCells] = useState(Array(2 * 2).fill(false));
     const [selectedCells, setSelectedCells] = useState([]);
     const [isLocked, setIsLocked] = useState(false);
     const [pieces, setPieces] = useState([]);
@@ -29,22 +32,69 @@ function MemoryGame({ auth }) {
     const [pairOrderVisible, setPairOrderVisible] = useState(true);
     const [levelFinished, setLevelFinished] = useState(false);
     const [completedDueToGiveUp, setCompletedDueToGiveUp] = useState(false);
-    
-    
+    const [showConfetti, setShowConfetti] = useState(false);
+
+    const totalPairs = Math.max(Math.min(level, 12), 2); // Ensure minimum of 2 pairs
+
+    let rows = Math.ceil(Math.sqrt(totalPairs)); // Start with a square grid shape
+    let cols = Math.ceil(totalPairs / rows) * 2; // Double the columns to accommodate pairs
+
+    // Ensure the grid has even rows and columns
+    if (rows % 2 !== 0) {
+        rows++;
+    }
+    if (cols % 2 !== 0) {
+        cols++;
+    }
+
+    // Adjust the grid size if there are too many cells
+    while (rows * cols > totalPairs * 2) {
+        if (rows > cols) {
+            cols -= 2; // Reduce columns by 2
+        } else {
+            rows -= 2; // Reduce rows by 2
+        }
+    }
+
+    console.log("Grid size:", rows, "x", cols);
+
+
+
+
+
+
+
+
+
+
+
     const { data, setData, post, processing, errors, reset } = useForm({
         points: '',
         time: '',
         level: '',
+        gaveUp: '',
     });
 
     const [playFlippedSound] = useSound(flipped);
 
     useEffect(() => {
         generateRandomPieces();
-    }, []);
+    }, [level]);
 
     useEffect(() => {
-        if (pairOrderVisible && startTime === null  && gameStarted) {
+        if (bestScore && points > bestScore.best_score) {
+            setShowConfetti(true);
+        }
+    }, [points, bestScore]);
+
+    useEffect(() => {
+        if (level === maxLevel) {
+            setShowConfetti(true);
+        }
+    }, [level]);
+
+    useEffect(() => {
+        if (pairOrderVisible && startTime === null && gameStarted) {
             const timeoutId = setTimeout(() => {
                 setPairOrderVisible(false);
                 setStartTime(Date.now());
@@ -55,9 +105,17 @@ function MemoryGame({ auth }) {
             }, 1200);
             return () => clearTimeout(timeoutId);
         }
-    }, [pairOrderVisible, startTime, rows, cols, level]);
+    }, [pairOrderVisible, startTime, rows, cols, level, gameStarted]);
 
-    console.log(180-(currentTime/1000))
+    useEffect(() => {
+        if (startTime === null && gameStarted) {
+            setStartTime(Date.now());
+            setFlippedCells(Array(rows * cols).fill(true));
+            setTimeout(() => {
+                setFlippedCells(Array(rows * cols).fill(false));
+            }, 2000 - (level * 5));
+        }
+    }, [startTime, gameStarted]);
 
     useEffect(() => {
         if (startTime !== null && !isGameCompleted) {
@@ -79,11 +137,12 @@ function MemoryGame({ auth }) {
         setData({
             points: points,
             level: level,
-            time: 180-(currentTime/1000),
+            time: 180 - (currentTime / 1000),
+            gaveUp: 0,
+            lost: 0,
         });
-        
+
         if (isGameCompleted || levelFinished) {
-            // console.log(data)
             post(route('postScore'), {
                 data
             });
@@ -96,8 +155,8 @@ function MemoryGame({ auth }) {
             setLevelFinished(true);
         } else if (selectedCells.length === 2) {
             const timeoutId = setTimeout(() => {
-                const areSelectedCellsCorrect = pieces[selectedCells[0]].icon === pieces[selectedCells[1]].icon &&
-                    pieces[selectedCells[0]].color === pieces[selectedCells[1]].color;
+                const areSelectedCellsCorrect = pieces[selectedCells[0]]?.icon === pieces[selectedCells[1]]?.icon &&
+                    pieces[selectedCells[0]]?.color === pieces[selectedCells[1]]?.color;
                 if (!areSelectedCellsCorrect) {
                     closeIncorrectPair(selectedCells[0], selectedCells[1]);
                 }
@@ -118,19 +177,21 @@ function MemoryGame({ auth }) {
     }, [correctCells, rows, cols, level, selectedCells]);
 
     const generateRandomPieces = () => {
-        const pairsNeeded = rows * cols / 2;
         const newPieces = [];
         const shuffledIcons = [...icons].sort(() => Math.random() - 0.5);
-        const shuffledColors = [...colors].sort(() => Math.random() - 0.5);
 
-        for (let i = 0; i < pairsNeeded; i++) {
+        // Generate pairs with alternating colors
+        for (let i = 0; i < totalPairs; i++) {
             const iconIndex = i % icons.length;
             const icon = shuffledIcons[iconIndex];
-            const piece1 = { icon, color: shuffledColors[0] };
-            const piece2 = { icon, color: shuffledColors[1] };
+            const colorIndex = Math.floor(i / icons.length) % colors.length; // Ensure color pairs are matched
+            const color = colors[colorIndex];
+            const piece1 = { icon, color };
+            const piece2 = { icon, color };
             newPieces.push(piece1, piece2);
         }
 
+        // Shuffle the pieces
         for (let i = newPieces.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [newPieces[i], newPieces[j]] = [newPieces[j], newPieces[i]];
@@ -139,11 +200,20 @@ function MemoryGame({ auth }) {
         setPieces(newPieces);
     };
 
+
+
+
+
     const handleCellClick = (index) => {
         if (isLocked || selectedCells.length === 2 || flippedCells[index]) return;
         playFlippedSound();
 
         if (startTime === null) {
+            setStartTime(Date.now());
+        }
+
+        if (startTime === null && !gameStarted) {
+            setGameStarted(true);
             setStartTime(Date.now());
         }
 
@@ -203,8 +273,8 @@ function MemoryGame({ auth }) {
                     {flippedCells[index] ? (
                         <span>
                             <FontAwesomeIcon
-                                icon={pieces[index].icon}
-                                style={{ color: pieces[index].color }}
+                                icon={pieces[index]?.icon}
+                                style={{ color: pieces[index]?.color }}
                             />
                         </span>
                     ) : null}
@@ -226,20 +296,23 @@ function MemoryGame({ auth }) {
         setLevel(1);
         setFlippedCells(Array(rows * cols).fill(false));
         setSelectedCells([]);
-        setCorrectCells([]); 
-        setIsGameCompleted(false); 
-        setStartTime(null); 
+        setCorrectCells([]);
+        setIsGameCompleted(false);
+        setStartTime(null);
         setCurrentTime(180 * 1000);
-        setPoints(0); 
+        setPoints(0);
         setStreak(0);
         setPairOrderVisible(true);
         setLevelFinished(false);
-        setCompletedDueToGiveUp(false); 
-        generateRandomPieces(); 
+        setCompletedDueToGiveUp(false);
+        generateRandomPieces();
+        const lostDueToTime = currentTime <= 0 ? 1 : 0;
         setData({
             points: points,
             level: level,
-            time: 180-(currentTime/1000),
+            time: 180 - (currentTime / 1000),
+            gaveUp: 0,
+            lost: lostDueToTime,
         });
     };
 
@@ -250,7 +323,9 @@ function MemoryGame({ auth }) {
         setData({
             points: points,
             level: level,
-            time: 180-(currentTime/1000),
+            time: 180 - (currentTime / 1000),
+            gaveUp: 1,
+            lost: 0
         });
     };
 
@@ -292,13 +367,19 @@ function MemoryGame({ auth }) {
             ) : (
                 !isGameCompleted && !levelFinished && <StartScreen onStart={handleStartGame} />
             )}
-            
+
             {levelFinished && level < maxLevel && !completedDueToGiveUp && (
                 <LevelCompletePopup onNextLevel={handleNextLevel} onGiveUp={handleGiveUp} />
             )}
 
             {isGameCompleted && level === maxLevel && !completedDueToGiveUp ? (
-                <WinnerScreen />
+                <>
+                    <WinnerScreen />
+                    <Confetti
+                        width={256}
+                        height={256}
+                    />
+                </>
             ) : (
                 isGameCompleted && <GameOverScreen level={level} points={points} onRetry={handleRetry} />
             )}
@@ -307,3 +388,4 @@ function MemoryGame({ auth }) {
 }
 
 export default MemoryGame;
+

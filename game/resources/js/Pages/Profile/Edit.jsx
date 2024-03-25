@@ -12,8 +12,8 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
         >
             <Head title="Profile" />
 
-            <div className="">
-                <div className="">
+            <div className="profile-page">
+                <div className="profile-options">
                     <div className="">
                         <UpdateProfileInformationForm
                             mustVerifyEmail={mustVerifyEmail}

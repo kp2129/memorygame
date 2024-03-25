@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\MemoryGameController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\LeaderboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -44,10 +45,10 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/memoryGame', [MemoryGameController::class, 'getView'])->name('game');
     Route::post('/memoryGame', [MemoryGameController::class, 'postScore'])->name('postScore');
+    Route::get('/history', [MemoryGameController::class, 'getHistory'])->name('history');
+    Route::get('/leaderboard', [LeaderboardController::class, 'getLeaderboard'])->name('leaderboard');
 });
 
-Route::middleware('auth')->group(function () {
-    Route::get('/history', [MemoryGameController::class, 'getHistory'])->name('history');
-});
+
 
 require __DIR__.'/auth.php';
